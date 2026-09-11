@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#16C79A">
+<title>MiBotTrader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E11; --panel:#12161C; --panel-alt:#171C24; --border:#232A33; --border-soft:#1A2028;
+    --text:#E7ECEF; --text-dim:#7C8896; --text-faint:#4B5560;
+    --bull:#16C79A; --bull-soft:rgba(22,199,154,.14); --bull-line:rgba(22,199,154,.45);
+    --bear:#EF5D60; --bear-soft:rgba(239,93,96,.14); --bear-line:rgba(239,93,96,.45);
+    --amber:#E3B341; --amber-soft:rgba(227,179,65,.14);
+    --font-display:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-mono:'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-mono);}
+  body{min-height:100vh;padding:28px 20px 60px;
+    background:radial-gradient(circle at 15% 0%, rgba(22,199,154,.05), transparent 40%),
+               radial-gradient(circle at 85% 10%, rgba(239,93,96,.04), transparent 40%), var(--bg);}
+  .wrap{max-width:980px;margin:0 auto;}
+  .eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-faint);margin:0 0 8px;text-align:center;}
+  h1{font-family:var(--font-display);font-size:32px;font-weight:700;margin:0;letter-spacing:.18em;text-align:center;}
+  .title-row{display:flex;align-items:center;justify-content:center;margin-bottom:6px;}
+  .ficticia{text-align:center;font-size:11.5px;color:var(--amber);background:var(--amber-soft);display:inline-block;padding:4px 12px;border-radius:20px;margin:0 auto 20px;letter-spacing:.05em;}
+  .ficticia-row{text-align:center;margin-bottom:20px;}
+
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px;padding:16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;}
+  .field{display:flex;flex-direction:column;gap:5px;min-width:140px;}
+  .field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);}
+  select, input[type=number], input[type=text]{background:var(--panel-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:13px;padding:7px 8px;border-radius:6px;outline:none;width:100%;}
+  select:focus, input:focus{border-color:var(--text-dim);}
+  .btn{background:var(--panel-alt);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:12px;letter-spacing:.05em;padding:9px 14px;border-radius:6px;cursor:pointer;transition:border-color .15s ease, background .15s ease;}
+  .btn:hover{border-color:var(--text-dim);background:#1c222b;}
+  .btn.danger{border-color:var(--bear-line);color:var(--bear);}
+  .btn.danger:hover{background:var(--bear-soft);}
+  .status-line{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-faint);margin-left:auto;}
+  .dot-live{width:6px;height:6px;border-radius:50%;background:var(--text-faint);flex-shrink:0;}
+  .dot-live.ok{background:var(--bull);box-shadow:0 0 6px var(--bull);}
+  .dot-live.err{background:var(--bear);box-shadow:0 0 6px var(--bear);}
+
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  @media (max-width:760px){.summary{grid-template-columns:repeat(2,1fr);}}
+  .stat{border:1px solid var(--border);background:var(--panel);border-radius:12px;padding:16px;}
+  .stat .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
+  .stat .val{font-family:var(--font-display);font-size:24px;font-weight:700;}
+  .stat .val.bull{color:var(--bull);}
+  .stat .val.bear{color:var(--bear);}
+  .stat .sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
+
+  .section{border:1px solid var(--border);background:var(--panel);border-radius:12px;padding:16px;margin-bottom:16px;}
+  .section h3{font-family:var(--font-display);font-size:14px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;}
+  .section h3 small{font-size:10px;color:var(--text-faint);font-weight:400;font-family:var(--font-mono);}
+  .empty{font-size:12px;color:var(--text-faint);}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  th{text-align:left;color:var(--text-faint);font-weight:500;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:6px 7px;border-bottom:1px solid var(--border);}
+  td{padding:7px 7px;border-bottom:1px dashed var(--border-soft);color:var(--text-dim);white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  .tag{display:inline-block;font-size:10px;padding:3px 8px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase;font-family:var(--font-mono);}
+  .tag.bull{background:var(--bull-soft);color:var(--bull);}
+  .tag.bear{background:var(--bear-soft);color:var(--bear);}
+  .tag.amber{background:var(--amber-soft);color:var(--amber);}
+  .tag.dim{background:var(--panel-alt);color:var(--text-faint);}
+  .pnl.pos{color:var(--bull);font-weight:600;}
+  .pnl.neg{color:var(--bear);font-weight:600;}
+  .mini-btn{background:var(--panel-alt);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-mono);font-size:10px;padding:4px 8px;border-radius:5px;cursor:pointer;}
+  .mini-btn:hover{border-color:var(--bear-line);color:var(--bear);}
+  .table-scroll{overflow-x:auto;}
+
+  details.adv{border:1px solid var(--border);background:var(--panel);border-radius:12px;margin-bottom:16px;}
+  details.adv summary{cursor:pointer;padding:14px 16px;font-family:var(--font-display);font-size:13px;list-style:none;display:flex;align-items:center;color:var(--text);}
+  details.adv summary::-webkit-details-marker{display:none;}
+  details.adv summary::after{content:'▾';color:var(--text-faint);margin-left:auto;transition:transform .2s ease;}
+  details.adv[open] summary::after{transform:rotate(180deg);}
+  .adv-body{padding:0 16px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 14px;}
+  .adv-body .field.checkfield{flex-direction:row;align-items:center;gap:7px;}
+
+  footer{margin-top:22px;font-size:11px;line-height:1.6;color:var(--text-faint);border-top:1px solid var(--border-soft);padding-top:16px;}
+  footer b{color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Cuenta ficticia · señales automáticas · sin razonamiento visible</p>
+  <div class="title-row"><h1 style="letter-spacing:.45em;">MiBotTrader</h1></div>
+  <div class="ficticia-row"><span class="ficticia">⚠ Cuenta ficticia — no ejecuta órdenes reales ni mueve dinero de verdad</span></div>
+
+  <div class="controls">
+    <div class="field">
+      <label>Pares (fijo)</label>
+      <div style="padding:7px 8px;background:var(--panel-alt);border:1px solid var(--border);border-radius:6px;font-size:12.5px;">LONG: BTC+ETH · SHORT: +DOGE</div>
+    </div>
+    <button class="btn" id="refreshBtn">↻ Actualizar ahora</button>
+    <button class="btn danger" id="resetBtn">⟲ Reiniciar cuenta ficticia</button>
+    <div class="status-line"><span class="dot-live" id="liveDot"></span><span id="statusText">esperando…</span></div>
+    <div id="persistStatus" style="font-size:11px;color:var(--text-faint);margin-left:auto;"></div>
+  </div>
+
+  <div class="summary">
+    <div class="stat"><div class="lbl">Balance disponible</div><div class="val" id="stBalance">—</div><div class="sub">de 10,000.00 USDT iniciales</div></div>
+    <div class="stat"><div class="lbl">Equity total</div><div class="val" id="stEquity">—</div><div class="sub" id="stEquitySub">incluye posiciones abiertas</div></div>
+    <div class="stat"><div class="lbl">P&L acumulado</div><div class="val" id="stPnl">—</div><div class="sub" id="stPnlSub">—</div></div>
+    <div class="stat"><div class="lbl">Operaciones</div><div class="val" id="stTrades">—</div><div class="sub" id="stWinrate">—</div></div>
+  </div>
+
+  <div class="section">
+    <h3>Posiciones abiertas <small>BTC + ETH siempre · DOGE solo si Short · 100-50 USDT · 10x</small></h3>
+    <div class="table-scroll"><div id="openPosList"><div class="empty">Sin posiciones abiertas todavía.</div></div></div>
+  </div>
+
+  <div class="section">
+    <h3>Historial <small>señales, operaciones cerradas y disparos sin capital disponible</small></h3>
+    <div class="table-scroll"><div id="histList"><div class="empty">Todavía no hay actividad registrada.</div></div></div>
+  </div>
+
+  <details class="adv">
+    <summary>Configuración avanzada de la estrategia <small style="margin-left:8px;font-weight:400;">(igual que en la app principal — no hace falta tocar esto)</small></summary>
+    <div class="adv-body">
+      <div class="field"><label>EMA rápida / lenta</label>
+        <div style="display:flex;gap:6px;"><input type="number" id="emaFast" value="10" min="2" max="200"><input type="number" id="emaSlow" value="55" min="2" max="400"></div>
+      </div>
+      <div class="field"><label>ADX mínimo</label><input type="number" id="adxThreshold" value="23" min="5" max="60"></div>
+      <div class="field"><label>RSI / Stoch (largo)</label>
+        <div style="display:flex;gap:6px;"><input type="number" id="stochRsiLen" value="14" min="2" max="50"><input type="number" id="stochLen" value="14" min="2" max="50"></div>
+      </div>
+      <div class="field"><label>StochRSI K / D</label>
+        <div style="display:flex;gap:6px;"><input type="number" id="stochK" value="3" min="1" max="20"><input type="number" id="stochD" value="3" min="1" max="20"></div>
+      </div>
+      <div class="field"><label>Sobreventa / Sobrecompra</label>
+        <div style="display:flex;gap:6px;"><input type="number" id="stochOS" value="20" min="1" max="49"><input type="number" id="stochOB" value="80" min="51" max="99"></div>
+      </div>
+      <div class="field"><label>Tendencia Motor Principal</label>
+        <select id="trendInterval"><option value="1d" selected>1D</option><option value="4h">4H</option><option value="1h">1H</option></select>
+      </div>
+      <div class="field"><label>Entrada Motor Principal</label>
+        <select id="signalInterval"><option value="4h" selected>4H</option><option value="1h">1H</option><option value="15m">15m</option><option value="5m">5m</option></select>
+      </div>
+      <div class="field checkfield">
+        <input type="checkbox" id="requireCross" checked style="accent-color:var(--bull);width:14px;height:14px;">
+        <label for="requireCross" style="text-transform:none;letter-spacing:0;font-size:11px;color:var(--text-dim);">Exigir cruce K/D</label>
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    <b>MiBotTrader</b> ejecuta automáticamente, sobre una cuenta ficticia de <b>10,000 USDT</b>, la misma lógica pública de <b>Jaime Merino / TradingLatino</b> (EMA, Squeeze Momentum, ADX, StochRSI) ya usada en la app principal — Motor Principal, las 6 combinaciones de Multi-temporalidad y los 3 estados del Proceso Cascada se siguen evaluando en cada ronda, pero como máximo <b>una sola operación abierta a la vez en toda la cuenta</b>. Cuando hay capacidad libre y más de una ranura señala al mismo tiempo, se prioriza la más confirmada: Cascada completa → Cascada parcial → Confirmación 4H → Motor Principal → Multi-TF de mayor a menor temporalidad. Las señales que no se llegan a operar (por prioridad o por ya haber una posición abierta) quedan igual registradas en el historial. Cada operación LONG abre <b>BTC (100 USDT) + ETH (100 USDT)</b>; cada operación SHORT abre <b>BTC (100) + ETH (100) + DOGE (50)</b> — todas a <b>10x</b>. Una vez abiertas juntas, cada pata sigue su <b>propio</b> Stop Loss (20%), Take Profit (25%) y protección de Breakeven (+10% mueve el stop a precio de entrada) de forma independiente, sobre su propio margen — no cierran todas a la vez, cada símbolo vive su propio recorrido de precio. No cierra por señal contraria. <b>Guardado automático:</b> los datos (balance, posiciones, historial) se persisten en `localStorage` cada 10 segundos, así que la cuenta se recupera íntegra al recargar la página o al día siguiente. El monitoreo de precio para SL/TP/breakeven corre cada ~15s; el escaneo completo de señales, cada 60s. <b>No simula comisiones ni slippage.</b> Es una simulación educativa con fines de validación — <b>no ejecuta órdenes reales, no es asesoría financiera, y el apalancamiento 10x implica riesgo real de pérdida del margen en cada operación si algún día se conecta a una cuenta real.</b> Datos de Binance API pública, directo desde el navegador.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (n, d=2) => n==null || isNaN(n) ? '—' : Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtPrice = n => { if(n==null) return '—'; const d = n < 1 ? 6 : n < 100 ? 4 : 2; return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); };
+  const fmtUsd = n => (n>=0?'+':'') + fmt(n,2) + ' USDT';
+  const fmtPct = n => (n>=0?'+':'') + fmt(n,2) + '%';
+
+  // ==================== constantes de la cuenta ficticia ====================
+  const START_BALANCE = 10000;
+  const MARGIN_PER_TRADE = 100;
+  const MARGIN_DOGE = 50;    // DOGE solo si SHORT, con 50 USDT de margen
+  const LEVERAGE = 10;
+  const SL_PCT = -20;   // sobre margen
+  const TP_PCT = 25;    // sobre margen
+  const BE_TRIGGER_PCT = 10; // sobre margen — a partir de acá, stop se mueve a 0% (breakeven)
+
+  const ACCOUNT_KEY = 'mibottrader_account_v1';
+  const SLOT_STATE_KEY = 'mibottrader_slot_state_v1';
+
+  // slots: 1 Principal + 6 Multi-TF + 3 estados de Cascada = 10 (= 1000/100, a propósito)
+  const MULTI_TF_DEFS = [
+    { entry:'4h',  trend:'1d', label:'4H'  },
+    { entry:'1h',  trend:'1d', label:'1H'  },
+    { entry:'15m', trend:'4h', label:'15M' },
+    { entry:'5m',  trend:'4h', label:'5M'  },
+    { entry:'3m',  trend:'1h', label:'3M'  },
+    { entry:'1m',  trend:'1h', label:'1M'  },
+  ];
+
+  // Orden de prioridad para decidir CUÁL ranura se lleva la única posición disponible,
+  // cuando varias señalan en la misma ronda: de la confirmación más sólida a la más liviana.
+  const SLOT_PRIORITY = [
+    'cascadeFull', 'cascadePartial', 'cascadeConfirm4h', 'principal',
+    'multi:4h', 'multi:1h', 'multi:15m', 'multi:5m', 'multi:3m', 'multi:1m',
+  ];
+
+  let account = null;      // { cashBalance, openPositions:[], history:[] }
+  let slotPrevDir = {};    // { slotKey: 'NONE'|'LONG'|'SHORT' } — para detectar flancos
+  let signalScanTimer = null, priceTimer = null;
+  let busyScan = false;
+
+  // ==================== persistencia ====================
+  let storageBroken = false;
+  function checkStorageWorks(){
+    try{
+      const testKey = '__mbt_test__';
+      localStorage.setItem(testKey, '1');
+      localStorage.removeItem(testKey);
+      return true;
+    }catch(e){ return false; }
+  }
+  function loadAccount(){
+    try{
+      const raw = localStorage.getItem(ACCOUNT_KEY);
+      if (raw) return JSON.parse(raw);
+    }catch(e){ storageBroken = true; }
+    return { cashBalance: START_BALANCE, openPositions: [], history: [] };
+  }
+  function saveAccount(){
+    try{
+      localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
+      storageBroken = false;
+    }catch(e){
+      storageBroken = true;
+      console.error('No se pudo guardar en localStorage:', e);
+    }
+    updatePersistIndicator();
+  }
+  function loadSlotState(){
+    try{ const raw = localStorage.getItem(SLOT_STATE_KEY); return raw ? JSON.parse(raw) : {}; }catch(e){ storageBroken = true; return {}; }
+  }
+  function saveSlotState(){
+    try{ localStorage.setItem(SLOT_STATE_KEY, JSON.stringify(slotPrevDir)); }catch(e){ storageBroken = true; }
+  }
+  function updatePersistIndicator(){
+    const el = $('persistStatus');
+    if (!el) return;
+    if (storageBroken){
+      el.innerHTML = '<span style="color:var(--bear);">⚠ No se puede guardar (localStorage bloqueado — revisá que el navegador no esté en modo privado)</span>';
+    } else if (account.history.length > 0){
+      const lastTime = new Date(account.history[0].ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+      el.textContent = `💾 Guardado ok (última actividad: ${lastTime})`;
+    } else {
+      el.textContent = '📌 Nueva sesión';
+    }
+  }
+
+  function resetAccount(){
+    if (!window.confirm('¿Reiniciar la cuenta ficticia a 10,000 USDT? Se borra todo el historial y las posiciones abiertas. Esto no se puede deshacer.')) return;
+    account = { cashBalance: START_BALANCE, openPositions: [], history: [] };
+    slotPrevDir = {};
+    saveAccount(); saveSlotState();
+    renderAll();
+  }
+
+  // ==================== indicator math (idéntico a la app principal) ====================
+  function computeSMA(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){ let s=0; for(let j=i-len+1;j<=i;j++) s+=values[j]; out[i]=s/len; }
+    return out;
+  }
+  function computeEMA(values, len){
+    const out = new Array(values.length).fill(null);
+    const k = 2/(len+1);
+    if (len-1 >= values.length) return out;
+    let sum=0; for(let j=0;j<len;j++) sum+=values[j];
+    out[len-1]=sum/len;
+    for (let i=len;i<values.length;i++) out[i] = values[i]*k + out[i-1]*(1-k);
+    return out;
+  }
+  function computeStdDev(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){
+      let s=0; for(let j=i-len+1;j<=i;j++) s+=values[j];
+      const mean=s/len;
+      let sq=0; for(let j=i-len+1;j<=i;j++) sq+=Math.pow(values[j]-mean,2);
+      out[i]=Math.sqrt(sq/len);
+    }
+    return out;
+  }
+  function computeHighest(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){ let m=-Infinity; for(let j=i-len+1;j<=i;j++) if(values[j]>m) m=values[j]; out[i]=m; }
+    return out;
+  }
+  function computeLowest(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){ let m=Infinity; for(let j=i-len+1;j<=i;j++) if(values[j]<m) m=values[j]; out[i]=m; }
+    return out;
+  }
+  function computeTR(high, low, close){
+    const out = new Array(close.length).fill(null);
+    for (let i=0;i<close.length;i++){
+      if (i===0){ out[i]=high[i]-low[i]; continue; }
+      out[i]=Math.max(high[i]-low[i], Math.abs(high[i]-close[i-1]), Math.abs(low[i]-close[i-1]));
+    }
+    return out;
+  }
+  function computeRMA(values, len){
+    const out = new Array(values.length).fill(null);
+    if (values.length<len) return out;
+    let seed=0; for(let j=0;j<len;j++) seed+=values[j];
+    out[len-1]=seed/len;
+    for (let i=len;i<values.length;i++) out[i] = (out[i-1]*(len-1) + values[i]) / len;
+    return out;
+  }
+  function computeADX(high, low, close, len){
+    const n = close.length;
+    const plusDM = new Array(n).fill(0), minusDM = new Array(n).fill(0);
+    const tr = computeTR(high, low, close);
+    for (let i=1;i<n;i++){
+      const upMove = high[i]-high[i-1], downMove = low[i-1]-low[i];
+      plusDM[i] = (upMove>downMove && upMove>0) ? upMove : 0;
+      minusDM[i] = (downMove>upMove && downMove>0) ? downMove : 0;
+    }
+    const trRMA = computeRMA(tr, len), plusDMRMA = computeRMA(plusDM, len), minusDMRMA = computeRMA(minusDM, len);
+    const plusDI = new Array(n).fill(null), minusDI = new Array(n).fill(null), dx = new Array(n).fill(null);
+    for (let i=0;i<n;i++){
+      if (trRMA[i]==null || trRMA[i]===0) continue;
+      plusDI[i] = 100*plusDMRMA[i]/trRMA[i];
+      minusDI[i] = 100*minusDMRMA[i]/trRMA[i];
+      const sum = plusDI[i]+minusDI[i];
+      dx[i] = sum===0?0:100*Math.abs(plusDI[i]-minusDI[i])/sum;
+    }
+    const startIdx = dx.findIndex(v=>v!=null);
+    const adx = new Array(n).fill(null);
+    if (startIdx>=0){ const dxSlice = dx.slice(startIdx); const adxRMA = computeRMA(dxSlice, len); for (let i=0;i<adxRMA.length;i++) adx[startIdx+i]=adxRMA[i]; }
+    return { adx, plusDI, minusDI };
+  }
+  function computeSqueeze(high, low, close, bbLen, bbMult, kcLen, kcMult){
+    const n = close.length;
+    const basis = computeSMA(close, bbLen);
+    const stdev = computeStdDev(close, bbLen);
+    const upperBB = basis.map((b,i)=> b==null||stdev[i]==null?null:b+stdev[i]*bbMult);
+    const lowerBB = basis.map((b,i)=> b==null||stdev[i]==null?null:b-stdev[i]*bbMult);
+    const maKC = computeSMA(close, kcLen);
+    const tr = computeTR(high, low, close);
+    const rangeMA = computeSMA(tr, kcLen);
+    const upperKC = maKC.map((m,i)=> m==null||rangeMA[i]==null?null:m+rangeMA[i]*kcMult);
+    const lowerKC = maKC.map((m,i)=> m==null||rangeMA[i]==null?null:m-rangeMA[i]*kcMult);
+    const highestHigh = computeHighest(high, kcLen), lowestLow = computeLowest(low, kcLen), smaClose = computeSMA(close, kcLen);
+    const valSource = new Array(n).fill(null);
+    for (let i=0;i<n;i++){
+      if (highestHigh[i]==null||lowestLow[i]==null||smaClose[i]==null) continue;
+      const midHL = (highestHigh[i]+lowestLow[i])/2;
+      valSource[i] = close[i]-((midHL+smaClose[i])/2);
+    }
+    const val = new Array(n).fill(null);
+    for (let i=kcLen-1;i<n;i++){
+      let ok=true; for (let j=i-kcLen+1;j<=i;j++){ if(valSource[j]==null){ok=false;break;} }
+      if(!ok) continue;
+      let sumX=0,sumY=0,sumXY=0,sumX2=0;
+      for (let x=0;x<kcLen;x++){ const y=valSource[i-kcLen+1+x]; sumX+=x; sumY+=y; sumXY+=x*y; sumX2+=x*x; }
+      const denom = (kcLen*sumX2-sumX*sumX);
+      const slope = denom===0?0:(kcLen*sumXY-sumX*sumY)/denom;
+      const intercept = (sumY-slope*sumX)/kcLen;
+      val[i] = intercept+slope*(kcLen-1);
+    }
+    const sqzOn = new Array(n).fill(null);
+    for (let i=0;i<n;i++){
+      if(lowerBB[i]==null||lowerKC[i]==null||upperBB[i]==null||upperKC[i]==null) continue;
+      sqzOn[i] = (lowerBB[i] > lowerKC[i]) && (upperBB[i] < upperKC[i]);
+    }
+    return { val, sqzOn };
+  }
+  function computeHighestSafe(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){ let ok=true,m=-Infinity; for (let j=i-len+1;j<=i;j++){ if(values[j]==null){ok=false;break;} if(values[j]>m) m=values[j]; } out[i]=ok?m:null; }
+    return out;
+  }
+  function computeLowestSafe(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){ let ok=true,m=Infinity; for (let j=i-len+1;j<=i;j++){ if(values[j]==null){ok=false;break;} if(values[j]<m) m=values[j]; } out[i]=ok?m:null; }
+    return out;
+  }
+  function computeSMASafe(values, len){
+    const out = new Array(values.length).fill(null);
+    for (let i=len-1;i<values.length;i++){ let ok=true,s=0; for (let j=i-len+1;j<=i;j++){ if(values[j]==null){ok=false;break;} s+=values[j]; } out[i]=ok?s/len:null; }
+    return out;
+  }
+  function computeRSI(values, len){
+    const n = values.length;
+    const gains = new Array(n).fill(0), losses = new Array(n).fill(0);
+    for (let i=1;i<n;i++){ const diff = values[i]-values[i-1]; gains[i]=diff>0?diff:0; losses[i]=diff<0?-diff:0; }
+    const avgGain = computeRMA(gains, len), avgLoss = computeRMA(losses, len);
+    const rsi = new Array(n).fill(null);
+    for (let i=0;i<n;i++){
+      if (avgGain[i]==null||avgLoss[i]==null) continue;
+      if (avgLoss[i]===0){ rsi[i]=100; continue; }
+      rsi[i] = 100-(100/(1+avgGain[i]/avgLoss[i]));
+    }
+    return rsi;
+  }
+  function computeStochRSI(close, rsiLen, stochLen, kSmooth, dSmooth){
+    const rsi = computeRSI(close, rsiLen);
+    const rsiHighest = computeHighestSafe(rsi, stochLen), rsiLowest = computeLowestSafe(rsi, stochLen);
+    const stochRaw = rsi.map((v,i)=>{
+      if (v==null||rsiHighest[i]==null||rsiLowest[i]==null) return null;
+      const range = rsiHighest[i]-rsiLowest[i];
+      return range===0 ? 50 : ((v-rsiLowest[i])/range)*100;
+    });
+    const k = computeSMASafe(stochRaw, kSmooth);
+    const d = computeSMASafe(k, dSmooth);
+    return { k, d };
+  }
+
+  function evalSignalAt(sig, i, params){
+    const vLast = sig.sqzVal[i];
+    const adxLast = sig.adx[i];
+    const adxOk = adxLast!=null && adxLast >= params.adxThreshold;
+    const kLast = sig.stochK[i], kPrev = sig.stochK[i-1];
+    const dLast = sig.stochD[i], dPrev = sig.stochD[i-1];
+    const crossUp = kLast!=null&&dLast!=null&&kPrev!=null&&dPrev!=null && kLast>dLast && kPrev<=dPrev;
+    const crossDown = kLast!=null&&dLast!=null&&kPrev!=null&&dPrev!=null && kLast<dLast && kPrev>=dPrev;
+    const oversold = kLast!=null && kLast <= params.stochOS;
+    const overbought = kLast!=null && kLast >= params.stochOB;
+    const stochLongOk = kLast==null ? false : (params.requireCross ? (oversold && crossUp) : oversold);
+    const stochShortOk = kLast==null ? false : (params.requireCross ? (overbought && crossDown) : overbought);
+    return { adxOk, stochLongOk, stochShortOk, momentumBull: vLast!=null&&vLast>0, momentumBear: vLast!=null&&vLast<0 };
+  }
+
+  // ---------------- Proceso Cascada (idéntico a la app principal) ----------------
+  function buildCascadeTf(kl, stochParams){
+    const ema10 = computeEMA(kl.close, 10);
+    const ema55 = computeEMA(kl.close, 55);
+    const sqz = computeSqueeze(kl.high, kl.low, kl.close, 20, 2, 20, 1.5);
+    const adx = computeADX(kl.high, kl.low, kl.close, 14).adx;
+    const stoch = computeStochRSI(kl.close, stochParams.stochRsiLen, stochParams.stochLen, stochParams.stochK, stochParams.stochD);
+    return { close: kl.close, ema10, ema55, sqzVal: sqz.val, adx, stochK: stoch.k, stochD: stoch.d };
+  }
+  function tfTrend(tf){
+    const n = tf.ema10.length;
+    const f = tf.ema10[n-1], s = tf.ema55[n-1];
+    if (f==null || s==null) return null;
+    return f>s ? 'bull' : f<s ? 'bear' : null;
+  }
+  function cascadeExhaustion(tf, dirBull, stochOS, stochOB){
+    const n = tf.close.length;
+    if (n<3) return false;
+    const sq0=tf.sqzVal[n-1], sq1=tf.sqzVal[n-2], sq2=tf.sqzVal[n-3];
+    const adx0=tf.adx[n-1], adx1=tf.adx[n-2];
+    const k0=tf.stochK[n-1], k1=tf.stochK[n-2];
+    if ([sq0,sq1,sq2,adx0,adx1,k0,k1].some(v=>v==null)) return false;
+    const sqFading = Math.abs(sq0) < Math.abs(sq1) && Math.abs(sq1) < Math.abs(sq2);
+    const adxFading = adx0 < adx1;
+    if (dirBull){ const touchedOS = k1<=stochOS || k0<=stochOS; return sqFading && adxFading && touchedOS && (k0>k1); }
+    else { const touchedOB = k1>=stochOB || k0>=stochOB; return sqFading && adxFading && touchedOB && (k0<k1); }
+  }
+  function cascadeConfirmed(tf, dirBull, stochOS, stochOB){
+    const n = tf.stochK.length;
+    if (n<3) return false;
+    const k0=tf.stochK[n-1], k1=tf.stochK[n-2], k2=tf.stochK[n-3];
+    const d0=tf.stochD[n-1], d1=tf.stochD[n-2];
+    if ([k0,k1,k2,d0,d1].some(v=>v==null)) return false;
+    if (dirBull){ const wasOS = k1<=stochOS || k2<=stochOS; return wasOS && (k1<=d1) && (k0>d0); }
+    else { const wasOB = k1>=stochOB || k2>=stochOB; return wasOB && (k1>=d1) && (k0<d0); }
+  }
+  function evalCascade(bundles, stochOS, stochOB){
+    const order = ['d1','h4','h1','m15','m5'];
+    const macroTrend = tfTrend(bundles.d1);
+    if (macroTrend==null) return { macroTrend:null, aligned:{}, depth:0 };
+    const dirBull = macroTrend==='bull';
+    const aligned = {};
+    for (const k of order) aligned[k] = tfTrend(bundles[k])===macroTrend;
+    let depth = 0, broke = null;
+    for (let idx=0; idx<order.length; idx++){
+      const k = order[idx];
+      if (!aligned[k]){ broke = k; break; }
+      depth = idx+1;
+      if (idx < order.length-1){
+        const exhausted = cascadeExhaustion(bundles[k], dirBull, stochOS, stochOB);
+        if (!exhausted){ broke = order[idx+1]; break; }
+      }
+    }
+    const confirmed5m = aligned.m5 && cascadeConfirmed(bundles.m5, dirBull, stochOS, stochOB);
+    const fullCascade = depth===5 && confirmed5m;
+    const partialPath = aligned.h1 && aligned.m15 && aligned.m5 && confirmed5m && !aligned.h4;
+    return { dirBull, macroTrend, aligned, fullCascade, partialPath };
+  }
+
+  // ==================== fetch ====================
+  async function fetchKlinesClosed(symbol, interval, limit){
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit+1}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const raw = await res.json();
+    const closedRaw = raw.slice(0, -1);
+    return {
+      openTime: closedRaw.map(k=>k[0]),
+      high: closedRaw.map(k=>parseFloat(k[2])),
+      low: closedRaw.map(k=>parseFloat(k[3])),
+      close: closedRaw.map(k=>parseFloat(k[4])),
+    };
+  }
+  async function fetchTickerPrice(symbol){
+    const url = `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    return parseFloat(data.price);
+  }
+  function findIndexAtOrBefore(openTimeArr, t){
+    let lo=0, hi=openTimeArr.length-1, ans=-1;
+    while(lo<=hi){ const mid=(lo+hi)>>1; if(openTimeArr[mid]<=t){ans=mid; lo=mid+1;} else hi=mid-1; }
+    return ans;
+  }
+  const FIXED_SYMBOL = 'BTCUSDT'; // MiBotTrader opera exclusivamente BTC/USDT
+  function currentSymbol(){
+    return FIXED_SYMBOL;
+  }
+
+  // ==================== multi-par: BTC siempre, ETH siempre, DOGE solo si SHORT ====================
+  // Cuando una señal dispara:
+  // - Si LONG: abre en BTC (100 USDT) + ETH (100 USDT) = 200 USDT de margen
+  // - Si SHORT: abre en BTC (100 USDT) + ETH (100 USDT) + DOGE (50 USDT) = 250 USDT de margen
+  const SYMBOLS_LONG = ['BTCUSDT', 'ETHUSDT'];
+  const SYMBOLS_SHORT = ['BTCUSDT', 'ETHUSDT', 'DOGEUSDT'];
+  const SYMBOL_MARGIN = { BTCUSDT: 100, ETHUSDT: 100, DOGEUSDT: 50 };
+
+  // ==================== historial (auditoría) ====================
+  function addHistoryEntry(entry){
+    account.history.unshift(Object.assign({ ts: Date.now() }, entry));
+    account.history = account.history.slice(0, 500); // tope razonable, no hace falta más para auditar
+    saveAccount();
+    renderHistory();
+  }
+
+  // ==================== apertura / cierre de posiciones ====================
+  // Restricción GLOBAL: como máximo 1 operación abierta a la vez en toda la cuenta.
+  // Una operación puede incluir múltiples símbolos:
+  // - LONG: BTC (100) + ETH (100) = 200 USDT de margen
+  // - SHORT: BTC (100) + ETH (100) + DOGE (50) = 250 USDT de margen
+  function tryOpenPositions(slotKey, kindLabel, dir, livePrice){
+    if (account.openPositions.length > 0){
+      addHistoryEntry({ type:'SEÑAL', dir, symbol:'BTC/ETH/DOGE', kind:kindLabel, estado:'Ya hay una posición abierta' });
+      return false;
+    }
+    const symbolsToOpen = dir==='LONG' ? SYMBOLS_LONG : SYMBOLS_SHORT;
+    const requiredMargin = symbolsToOpen.reduce((sum, sym) => sum + SYMBOL_MARGIN[sym], 0);
+    if (account.cashBalance < requiredMargin){
+      addHistoryEntry({ type:'SEÑAL', dir, symbol:'BTC/ETH/DOGE', kind:kindLabel, estado:'Sin capital disponible' });
+      return false;
+    }
+    account.cashBalance = +(account.cashBalance - requiredMargin).toFixed(4);
+    const operationId = slotKey + ':' + Date.now();
+    for (const symbol of symbolsToOpen){
+      const price = livePrice[symbol] || null;
+      const pos = {
+        id: operationId + ':' + symbol,
+        operationId,
+        slot: slotKey, kind: kindLabel, symbol, dir,
+        entryPrice: price,
+        entryTime: Date.now(),
+        breakevenActive: false,
+        margin: SYMBOL_MARGIN[symbol], leverage: LEVERAGE,
+      };
+      account.openPositions.push(pos);
+    }
+    saveAccount();
+    addHistoryEntry({ type:'SEÑAL', dir, symbol:symbolsToOpen.join('/'), kind:kindLabel, estado:'Posición abierta' });
+    renderOpenPositions();
+    return true;
+  }
+
+  function closePosition(pos, exitPrice, reason){
+    const marginPct = ((pos.dir==='LONG') ? (exitPrice-pos.entryPrice)/pos.entryPrice : (pos.entryPrice-exitPrice)/pos.entryPrice) * LEVERAGE * 100;
+    const pnlUsdt = +(pos.margin * marginPct/100).toFixed(4);
+    account.cashBalance = +(account.cashBalance + pos.margin + pnlUsdt).toFixed(4);
+    // Cada pata (BTC/ETH/DOGE) cierra de forma INDEPENDIENTE por su propio id — entran
+    // juntas como una operación, pero cada una sigue su propio SL/TP/Breakeven según su
+    // propio precio. Solo se quita esta pata del array, no las demás de la misma operación.
+    account.openPositions = account.openPositions.filter(p=>p.id!==pos.id);
+    saveAccount();
+    addHistoryEntry({
+      type:'CIERRE', dir:pos.dir, symbol:pos.symbol, kind:pos.kind, estado:reason,
+      entryPrice:pos.entryPrice, exitPrice, pnlUsdt, pnlPct:marginPct,
+      entryTime:pos.entryTime,
+    });
+    renderOpenPositions();
+  }
+
+  function manualClose(posId){
+    const pos = account.openPositions.find(p=>p.id===posId);
+    if (!pos) return;
+    if (!window.confirm(`¿Cerrar manualmente la posición ${pos.dir} de ${pos.symbol} (${pos.kind})?`)) return;
+    fetchTickerPrice(pos.symbol).then(price=>{
+      closePosition(pos, price, 'Manual');
+    }).catch(()=> alert('No se pudo obtener el precio actual, intentá de nuevo.'));
+  }
+  window.mbtManualClose = manualClose; // expuesto para el onclick inline
+
+  // ==================== monitoreo de precio (SL / TP / breakeven) — cada ~15s ====================
+  async function monitorPositions(){
+    if (!account.openPositions.length) return;
+    const symbols = Array.from(new Set(account.openPositions.map(p=>p.symbol)));
+    const prices = {};
+    try{
+      await Promise.all(symbols.map(async s=>{ prices[s] = await fetchTickerPrice(s); }));
+    }catch(e){ return; } // si falla el fetch, no tocamos nada, se reintenta en el próximo ciclo
+
+    // completar entryPrice si por algún motivo quedó pendiente (no debería pasar, pero por robustez)
+    for (const pos of account.openPositions){
+      if (pos.entryPrice==null) pos.entryPrice = prices[pos.symbol];
+    }
+
+    const stillOpen = [];
+    for (const pos of account.openPositions){
+      const price = prices[pos.symbol];
+      if (price==null){ stillOpen.push(pos); continue; }
+      const marginPct = ((pos.dir==='LONG') ? (price-pos.entryPrice)/pos.entryPrice : (pos.entryPrice-price)/pos.entryPrice) * LEVERAGE * 100;
+
+      const stopLevel = pos.breakevenActive ? 0 : SL_PCT;
+      if (marginPct <= stopLevel){
+        closePosition(pos, price, pos.breakevenActive ? 'Breakeven' : 'Stop Loss');
+        continue;
+      }
+      if (marginPct >= TP_PCT){
+        closePosition(pos, price, 'Take Profit');
+        continue;
+      }
+      if (!pos.breakevenActive && marginPct >= BE_TRIGGER_PCT){
+        pos.breakevenActive = true;
+      }
+      stillOpen.push(pos);
+    }
+    account.openPositions = stillOpen;
+    saveAccount();
+    renderOpenPositions();
+    renderSummary(prices);
+  }
+
+  // ==================== escaneo completo de señales (10 ranuras) — cada 60s ====================
+  async function runSignalScan(){
+    if (busyScan) return;
+    busyScan = true;
+    $('liveDot').className = 'dot-live';
+    $('statusText').textContent = 'escaneando señales…';
+    try{
+      const symbol = currentSymbol();
+      const params = {
+        emaFast: parseInt($('emaFast').value)||10,
+        emaSlow: parseInt($('emaSlow').value)||55,
+        adxThreshold: parseFloat($('adxThreshold').value)||23,
+        stochRsiLen: parseInt($('stochRsiLen').value)||14,
+        stochLen: parseInt($('stochLen').value)||14,
+        stochK: parseInt($('stochK').value)||3,
+        stochD: parseInt($('stochD').value)||3,
+        stochOS: parseFloat($('stochOS').value)||20,
+        stochOB: parseFloat($('stochOB').value)||80,
+        requireCross: $('requireCross').checked,
+      };
+      const trendInterval = $('trendInterval').value;
+      const signalInterval = $('signalInterval').value;
+
+      const limit = Math.min(1000, Math.max(params.emaSlow*6, 400));
+      const fixedIntervals = Array.from(new Set([...['1d','4h','1h','15m','5m','3m','1m'], trendInterval, signalInterval]));
+      const klArr = await Promise.all(fixedIntervals.map(iv => fetchKlinesClosed(symbol, iv, limit)));
+      const klMap = {};
+      fixedIntervals.forEach((iv,idx)=>{ klMap[iv]=klArr[idx]; });
+      
+      // Obtener precios de BTC, ETH, DOGE para poder operar en múltiples pares
+      const livePrice = {};
+      await Promise.all(['BTCUSDT', 'ETHUSDT', 'DOGEUSDT'].map(async sym => {
+        livePrice[sym] = await fetchTickerPrice(sym);
+      }));
+
+      const slotDirs = {}; // para logging de flancos
+
+      // --- Motor Principal ---
+      {
+        const trendKl = klMap[trendInterval], sigKl = klMap[signalInterval];
+        const efArr = computeEMA(trendKl.close, params.emaFast);
+        const esArr = computeEMA(trendKl.close, params.emaSlow);
+        const sqz = computeSqueeze(sigKl.high, sigKl.low, sigKl.close, 20, 2, 20, 1.5);
+        const adxRes = computeADX(sigKl.high, sigKl.low, sigKl.close, 14);
+        const stoch = computeStochRSI(sigKl.close, params.stochRsiLen, params.stochLen, params.stochK, params.stochD);
+        const sigBundle = { sqzVal: sqz.val, adx: adxRes.adx, stochK: stoch.k, stochD: stoch.d };
+        const i = sigKl.close.length-1;
+        const es = evalSignalAt(sigBundle, i, params);
+        const efLast = efArr[efArr.length-1], esLast = esArr[esArr.length-1];
+        const trendBull = efLast!=null && esLast!=null && efLast>esLast;
+        let dir = 'NONE';
+        if (trendBull && es.momentumBull && es.adxOk && es.stochLongOk) dir='LONG';
+        else if (!trendBull && es.momentumBear && es.adxOk && es.stochShortOk) dir='SHORT';
+        slotDirs['principal'] = { dir, kind:'Principal' };
+      }
+
+      // --- Multi-TF (6) ---
+      for (const def of MULTI_TF_DEFS){
+        const eKl = klMap[def.entry], tKl = klMap[def.trend];
+        const efArr = computeEMA(tKl.close, params.emaFast);
+        const esArr = computeEMA(tKl.close, params.emaSlow);
+        const mSqz = computeSqueeze(eKl.high, eKl.low, eKl.close, 20, 2, 20, 1.5);
+        const mAdx = computeADX(eKl.high, eKl.low, eKl.close, 14);
+        const mStoch = computeStochRSI(eKl.close, params.stochRsiLen, params.stochLen, params.stochK, params.stochD);
+        const sigBundle = { sqzVal: mSqz.val, adx: mAdx.adx, stochK: mStoch.k, stochD: mStoch.d };
+        const i = eKl.close.length-1;
+        const es = evalSignalAt(sigBundle, i, params);
+        const efLast = efArr[efArr.length-1], esLast = esArr[esArr.length-1];
+        const trendBull = efLast!=null && esLast!=null && efLast>esLast;
+        let dir = 'NONE';
+        if (trendBull && es.momentumBull && es.adxOk && es.stochLongOk) dir='LONG';
+        else if (!trendBull && es.momentumBear && es.adxOk && es.stochShortOk) dir='SHORT';
+        slotDirs['multi:'+def.entry] = { dir, kind:`Multi-TF ${def.label} (Tend. ${def.trend.toUpperCase()})` };
+      }
+
+      // --- Cascada (3 estados) ---
+      {
+        const stochParams = { stochRsiLen: params.stochRsiLen, stochLen: params.stochLen, stochK: params.stochK, stochD: params.stochD };
+        const bundles = {
+          d1: buildCascadeTf(klMap['1d'], stochParams),
+          h4: buildCascadeTf(klMap['4h'], stochParams),
+          h1: buildCascadeTf(klMap['1h'], stochParams),
+          m15: buildCascadeTf(klMap['15m'], stochParams),
+          m5: buildCascadeTf(klMap['5m'], stochParams),
+        };
+        const casc = evalCascade(bundles, params.stochOS, params.stochOB);
+        const fullDir = casc.fullCascade ? (casc.dirBull?'LONG':'SHORT') : 'NONE';
+        const partialDir = casc.partialPath ? (casc.dirBull?'LONG':'SHORT') : 'NONE';
+        const confirm4hDir = (casc.partialPath && casc.aligned && casc.aligned.h4) ? (casc.dirBull?'LONG':'SHORT') : 'NONE';
+        slotDirs['cascadeFull'] = { dir: fullDir, kind:'Cascada completa (5 TF)' };
+        slotDirs['cascadePartial'] = { dir: partialDir, kind:'Cascada parcial (4H pendiente)' };
+        slotDirs['cascadeConfirm4h'] = { dir: confirm4hDir, kind:'Confirmación 4H (se sumó a la parcial)' };
+      }
+
+      // --- selección por prioridad: solo 1 operación en toda la cuenta ---
+      // Si no hay posición abierta, se abre con la ranura de MAYOR prioridad que esté
+      // señalando en esta ronda (SLOT_PRIORITY, de más a menos confirmada). El resto de
+      // las señales activas en la misma ronda quedan solo registradas en el historial.
+      // Si ya hay una posición abierta, TODAS las señales quedan registradas sin operar.
+      const noPositionOpen = account.openPositions.length === 0;
+      let opened = false;
+      for (const slotKey of SLOT_PRIORITY){
+        const { dir, kind } = slotDirs[slotKey];
+        const prevDir = slotPrevDir[slotKey] || 'NONE';
+        const isNewEdge = dir!=='NONE' && dir!==prevDir;
+        if (dir!=='NONE' && noPositionOpen && !opened){
+          // primera vez que capacidad está libre: se abre acá, sea o no un flanco nuevo
+          const success = tryOpenPositions(slotKey, kind, dir, livePrice);
+          if (success){ opened = true; }
+        } else if (isNewEdge){
+          // señal nueva pero no se pudo operar (prioridad menor esta ronda, o ya hay posición)
+          const estado = opened ? 'Prioridad menor esta ronda' : 'Ya hay una posición abierta';
+          addHistoryEntry({ type:'SEÑAL', dir, symbol:'BTC/ETH/DOGE', kind, estado });
+        }
+        slotPrevDir[slotKey] = dir;
+      }
+      saveSlotState();
+
+      renderOpenPositions();
+      renderSummary(livePrice);
+
+      $('liveDot').className = 'dot-live ok';
+      $('statusText').textContent = 'señales actualizadas ' + new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }catch(err){
+      $('liveDot').className = 'dot-live err';
+      $('statusText').textContent = 'error al conectar con Binance';
+      console.error(err);
+    }finally{
+      busyScan = false;
+    }
+  }
+
+  // ==================== render ====================
+  function renderSummary(pricesMap){
+    $('stBalance').textContent = fmt(account.cashBalance) + ' USDT';
+    let unrealized = 0;
+    for (const pos of account.openPositions){
+      const price = (pricesMap && pricesMap[pos.symbol]!=null) ? pricesMap[pos.symbol] : pos.entryPrice;
+      if (price==null || pos.entryPrice==null) continue;
+      const marginPct = ((pos.dir==='LONG') ? (price-pos.entryPrice)/pos.entryPrice : (pos.entryPrice-price)/pos.entryPrice) * LEVERAGE * 100;
+      unrealized += pos.margin * marginPct/100;
+    }
+    const totalMarginReserved = account.openPositions.reduce((s,p)=>s+p.margin, 0);
+    const equity = account.cashBalance + totalMarginReserved + unrealized;
+    $('stEquity').textContent = fmt(equity) + ' USDT';
+    $('stEquitySub').textContent = `${account.openPositions.length} posición(es) abiertas · P&L no realizado ${fmtUsd(unrealized)}`;
+
+    const closed = account.history.filter(h=>h.type==='CIERRE');
+    const realizedPnl = closed.reduce((s,h)=>s+h.pnlUsdt,0);
+    const totalPnl = realizedPnl + unrealized;
+    const pnlEl = $('stPnl');
+    pnlEl.textContent = fmtUsd(totalPnl);
+    pnlEl.className = 'val ' + (totalPnl>=0?'bull':'bear');
+    $('stPnlSub').textContent = `realizado ${fmtUsd(realizedPnl)} · sobre ${fmt(START_BALANCE)} inicial`;
+
+    const wins = closed.filter(h=>h.pnlUsdt>0).length;
+    const losses = closed.filter(h=>h.pnlUsdt<=0).length;
+    $('stTrades').textContent = closed.length;
+    $('stWinrate').textContent = closed.length ? `${wins}W / ${losses}L · ${((wins/closed.length)*100).toFixed(0)}% acierto` : 'sin operaciones cerradas';
+  }
+
+  function renderOpenPositions(){
+    const el = $('openPosList');
+    if (!account.openPositions.length){ el.innerHTML = '<div class="empty">Sin posiciones abiertas todavía.</div>'; return; }
+    const rows = account.openPositions.map(pos=>{
+      const cls = pos.dir==='LONG' ? 'bull' : 'bear';
+      const beTag = pos.breakevenActive ? '<span class="tag amber">Breakeven activo</span>' : '<span class="tag dim">Normal</span>';
+      const ageMin = Math.max(0, Math.round((Date.now()-pos.entryTime)/60000));
+      return `<tr>
+        <td>${pos.kind}</td>
+        <td>${pos.symbol}</td>
+        <td><span class="tag ${cls}">${pos.dir}</span></td>
+        <td>${fmtPrice(pos.entryPrice)}</td>
+        <td>${beTag}</td>
+        <td>${ageMin} min</td>
+        <td><button class="mini-btn" onclick="mbtManualClose('${pos.id}')">Cerrar manual</button></td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table><thead><tr><th>Motor</th><th>Par</th><th>Dir.</th><th>Entrada</th><th>Estado</th><th>Antigüedad</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderHistory(){
+    const el = $('histList');
+    if (!account.history.length){ el.innerHTML = '<div class="empty">Todavía no hay actividad registrada.</div>'; return; }
+    const rows = account.history.map(h=>{
+      const d = new Date(h.ts);
+      const dateStr = d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+      const timeStr = d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+      const dirCls = h.dir==='LONG' ? 'bull' : 'bear';
+      let estadoTag;
+      if (h.type==='CIERRE'){
+        const tagCls = h.estado==='Take Profit' ? 'bull' : h.estado==='Stop Loss' ? 'bear' : 'amber';
+        estadoTag = `<span class="tag ${tagCls}">${h.estado}</span>`;
+      } else {
+        const tagCls = h.estado==='Posición abierta' ? 'bull' : 'dim';
+        estadoTag = `<span class="tag ${tagCls}">${h.estado}</span>`;
+      }
+      const pnlCell = (h.type==='CIERRE') ? `<span class="pnl ${h.pnlUsdt>=0?'pos':'neg'}">${fmtUsd(h.pnlUsdt)} (${fmtPct(h.pnlPct)})</span>` : '—';
+      return `<tr>
+        <td>${dateStr}</td><td>${timeStr}</td><td>${h.symbol}</td>
+        <td><span class="tag ${dirCls}">${h.dir}</span></td>
+        <td style="font-size:11px;color:var(--text-faint);">${h.kind}</td>
+        <td>${estadoTag}</td>
+        <td>${pnlCell}</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table><thead><tr><th>Fecha</th><th>Hora</th><th>Par</th><th>Señal</th><th>Motor</th><th>Estado</th><th>Resultado</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderAll(){
+    renderSummary({});
+    renderOpenPositions();
+    renderHistory();
+  }
+
+  // ==================== wiring ====================
+  $('refreshBtn').addEventListener('click', runSignalScan);
+  $('resetBtn').addEventListener('click', resetAccount);
+
+  function scheduleTimers(){
+    if (signalScanTimer) clearInterval(signalScanTimer);
+    if (priceTimer) clearInterval(priceTimer);
+    let autoSaveTimer = setInterval(()=>{
+      saveAccount(); saveSlotState();
+      // indicador visual: breve destello en el indicador de estado
+      const dot = $('liveDot');
+      const originalClass = dot.className;
+      dot.className = 'dot-live ok';
+      setTimeout(()=>{ dot.className = originalClass; }, 200);
+    }, 10000); // guardar cada 10 segundos
+    signalScanTimer = setInterval(runSignalScan, 60000);
+    priceTimer = setInterval(monitorPositions, 15000);
+  }
+
+  account = loadAccount();
+  slotPrevDir = loadSlotState();
+  storageBroken = !checkStorageWorks();
+  if (account.history.length > 0){
+    const lastEntry = account.history[0];
+    const lastTime = new Date(lastEntry.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    console.log(`Cuenta recuperada — última actividad: ${lastTime}, ${account.history.length} eventos en historial, ${account.openPositions.length} posiciones abiertas.`);
+  }
+  updatePersistIndicator();
+
+  renderAll();
+  runSignalScan();
+  scheduleTimers();
+})();
+</script>
+</body>
+</html>
